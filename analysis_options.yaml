@@ -1,0 +1,5 @@
+# 根包（CLI）是纯 Dart；packages/* 是独立 Flutter 包，各自用 flutter analyze 检查。
+analyzer:
+  exclude:
+    - packages/**
+    - build/**

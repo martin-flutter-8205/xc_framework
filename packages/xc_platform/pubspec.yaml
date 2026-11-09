@@ -1,0 +1,19 @@
+name: xc_platform
+description: 框架层：mobx 内核的 Atom 响应式 + Action 派发 + Component 三件套 + 路由 + Module
+publish_to: none
+version: 0.1.0
+
+environment:
+  sdk: ^3.13.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # 响应式内核：Atom 就是 Observable，Obs 就是 Observer。
+  # 精确锁版本（不用 ^）：内核行为变化会直接改变重建时机与写值策略，
+  # 这类升级必须是人工确认的改动，不能靠 pub 自动抬版本带进来。
+  mobx: 2.7.0
+  flutter_mobx: 2.4.0
+  # flutter_mobx 经 provider 转发依赖，一并锁住避免传递漂移
+  provider: 6.1.5+1

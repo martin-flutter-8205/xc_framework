@@ -1,0 +1,10 @@
+name: xc_framework
+description: xc 框架与命令行：Atom/Action 状态管理、UI 组件、注解驱动代码生成、工程运维 CLI
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.13.0
+
+executables:
+  xc: xc
