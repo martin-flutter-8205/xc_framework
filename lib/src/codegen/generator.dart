@@ -20,9 +20,13 @@ import 'dart:io';
 ///
 /// 另外为整个包产出 `lib/gen/generated_routes.g.dart`（路由名 → `(RouteArgs) => Component`）。
 class Generator {
-  Generator({required this.root});
+  Generator({required this.root, this.packageDirs});
 
   final String root;
+
+  /// 参与生成的包目录（绝对路径）。为 null 时回退扫描 `packages/*`
+  /// （旧布局）；新布局由 `Project.packageDirs` 从 `xc.yaml` 的 workspace 清单解析。
+  final List<String>? packageDirs;
 
   List<String> run() {
     final List<String> logs = <String>[];
@@ -81,14 +85,25 @@ class Generator {
   // ---------------- 扫描 ----------------
 
   Iterable<Directory> _businessPackages() {
+    final List<String>? dirs = packageDirs;
+    if (dirs != null) {
+      return dirs
+          .map((String path) => Directory(path))
+          .where(
+            (Directory dir) =>
+                Directory('${dir.path}/lib/src/route').existsSync(),
+          )
+          .toList()
+        ..sort((Directory a, Directory b) => a.path.compareTo(b.path));
+    }
     final Directory packagesDir = Directory('$root/packages');
     if (!packagesDir.existsSync()) {
       return <Directory>[];
     }
-    final List<Directory> dirs =
+    final List<Directory> sorted =
         packagesDir.listSync().whereType<Directory>().toList()
           ..sort((Directory a, Directory b) => a.path.compareTo(b.path));
-    return dirs.where(
+    return sorted.where(
       (Directory dir) => Directory('${dir.path}/lib/src/route').existsSync(),
     );
   }

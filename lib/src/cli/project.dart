@@ -1,7 +1,11 @@
 /// App 工程模型：根目录、业务包、资源声明。
 ///
-/// 约定：App 根目录有 `pubspec.yaml` + `lib/main.dart`；业务包放 `packages/<name>/`，
-/// 每个都是独立的 Flutter package，由 App 以 path / git 依赖接入。
+/// 约定：App 根目录有 `pubspec.yaml` + `lib/main.dart`。
+/// 业务包来源有两处：
+///
+/// 1. 根目录 `xc.yaml` 的 `workspace:` 清单（推荐）——业务包与框架包都是独立
+///    git 仓库时，在这里声明本机检出目录，`xc gen / assets / check` 才知道去哪扫；
+/// 2. 根目录 `packages/<name>/`（兼容旧布局，存在就自动纳入）。
 library;
 
 import 'dart:io';
@@ -48,19 +52,51 @@ class Project {
     );
   }
 
-  /// App 内的业务包：`packages/*` 下带 pubspec 的目录。
+  /// App 依赖的代码包目录（绝对路径，去重后按路径排序）。
+  ///
+  /// 来源：`xc.yaml` 的 `workspace:` 清单 + 旧布局的 `packages/*`，
+  /// 只保留带 `pubspec.yaml` 的目录。
   List<String> get packageDirs {
+    final Set<String> dirs = <String>{};
+    for (final String member in _workspaceMembers()) {
+      final String dir = normalize(join(root, member));
+      if (File(join(dir, 'pubspec.yaml')).existsSync()) {
+        dirs.add(dir);
+      }
+    }
     final Directory packagesDir = Directory(join(root, 'packages'));
-    if (!packagesDir.existsSync()) return <String>[];
-    final List<String> dirs =
-        packagesDir
-            .listSync()
-            .whereType<Directory>()
-            .map((Directory d) => normalize(d.path))
-            .where((String d) => File(join(d, 'pubspec.yaml')).existsSync())
-            .toList()
-          ..sort();
-    return dirs;
+    if (packagesDir.existsSync()) {
+      for (final Directory d in packagesDir.listSync().whereType<Directory>()) {
+        final String dir = normalize(d.path);
+        if (File(join(dir, 'pubspec.yaml')).existsSync()) {
+          dirs.add(dir);
+        }
+      }
+    }
+    return dirs.toList()..sort();
+  }
+
+  /// 解析根目录 `xc.yaml` 里 `workspace:` 段的 `- ../xxx` 条目。
+  List<String> _workspaceMembers() {
+    final File manifest = File(join(root, 'xc.yaml'));
+    if (!manifest.existsSync()) return <String>[];
+    final List<String> members = <String>[];
+    bool inWorkspace = false;
+    for (final String raw in manifest.readAsStringSync().split('\n')) {
+      final String line = stripComment(raw);
+      if (line.trim().isEmpty) continue;
+      final String t = line.trim();
+      final int indent = line.length - line.trimLeft().length;
+      if (indent == 0) {
+        inWorkspace = t == 'workspace:';
+        continue;
+      }
+      if (!inWorkspace || !t.startsWith('- ')) continue;
+      String value = t.substring(2).trim();
+      value = value.replaceAll('"', '').replaceAll("'", '');
+      if (value.isNotEmpty) members.add(value);
+    }
+    return members;
   }
 
   /// 需要一起清理 / 分析 / 测试的目录（App 根 + 业务包）。

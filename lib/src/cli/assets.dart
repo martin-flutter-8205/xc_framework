@@ -121,7 +121,7 @@ String _render(AssetPackage pkg, List<String> files, String className) {
 
   final StringBuffer b = StringBuffer();
   b.writeln('// GENERATED CODE - DO NOT MODIFY BY HAND');
-  b.writeln('// 由 `xc assets` 生成，来源 ${pkg.member}/pubspec.yaml');
+  b.writeln('// 由 `xc assets` 生成，来源 ${pkg.name}/pubspec.yaml');
   b.writeln();
   b.writeln('/// ${pkg.name} 已声明的静态资源。');
   b.writeln('///');

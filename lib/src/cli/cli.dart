@@ -199,10 +199,13 @@ Future<void> _deps(Project project, Toolchain toolchain, _Args args) async {
 // ─────────────────────────────── gen ───────────────────────────────
 
 Future<void> _gen(Project project, _Args args) async {
-  final int pages = findFiles(
-    join(project.root, 'packages'),
-    (String name) => name.endsWith('_page_com.dart'),
-  ).length;
+  int pages = 0;
+  for (final String dir in project.packageDirs) {
+    pages += findFiles(
+      dir,
+      (String name) => name.endsWith('_page_com.dart'),
+    ).length;
+  }
   step('扫描页面文件  ${dim('$pages 个')}');
 
   if (!File(join(project.root, '.dart_tool/package_config.json'))
@@ -219,7 +222,10 @@ Future<void> _gen(Project project, _Args args) async {
     return;
   }
 
-  final List<String> logs = Generator(root: project.root).run();
+  final List<String> logs = Generator(
+    root: project.root,
+    packageDirs: project.packageDirs,
+  ).run();
   for (final String line in logs) {
     line.startsWith('[ERROR]')
         ? warn(line.replaceFirst('[ERROR] ', ''))
